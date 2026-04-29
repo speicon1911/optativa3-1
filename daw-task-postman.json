@@ -1,0 +1,262 @@
+{
+	"info": {
+		"_postman_id": "848b62c4-2794-4d8e-908d-56540c169b18",
+		"name": "DawTask API",
+		"description": "Colección para probar la API de DawTask, incluyendo pruebas de seguridad.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"test@example.com\",\n    \"password1\": \"password123\",\n    \"password2\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access) {",
+									"    pm.environment.set(\"token\", jsonData.access);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tareas",
+			"item": [
+				{
+					"name": "Listar Tareas",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tareas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tareas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Tarea",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"titulo\": \"Tarea desde Postman\",\n    \"descripcion\": \"Probando la API\",\n    \"fechaVencimiento\": \"2026-12-31\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tareas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tareas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Tarea",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": 1,\n    \"titulo\": \"Tarea Modificada\",\n    \"descripcion\": \"Descripción actualizada\",\n    \"fechaVencimiento\": \"2026-12-31\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tareas/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tareas",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Iniciar Tarea",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tareas/1/iniciar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tareas",
+								"1",
+								"iniciar"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Seguridad (Forzar Error)",
+			"item": [
+				{
+					"name": "Acceder a Tarea de Otro Usuario",
+					"description": "Intenta iniciar una tarea que pertenece a otro usuario. Debe devolver 403 Forbidden o el error personalizado de seguridad.",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tareas/999/iniciar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tareas",
+								"999",
+								"iniciar"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8081",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

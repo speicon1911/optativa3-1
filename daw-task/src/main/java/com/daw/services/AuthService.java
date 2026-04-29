@@ -16,16 +16,16 @@ import com.daw.web.config.JwtUtils;
 
 @Service
 public class AuthService {
-	
+
 	@Autowired
 	private AuthenticationManager authenticationManager;
-	
+
 	@Autowired
 	private JwtUtils jwtUtil;
-	
+
 	@Autowired
 	private UsuarioService usuarioService;
-	
+
 	public LoginResponse login(LoginRequest request) {
 		Authentication authentication = authenticationManager
 				.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
@@ -33,34 +33,34 @@ public class AuthService {
 
 		String accessToken = jwtUtil.generateAccessToken(userDetails);
 		String refreshToken = jwtUtil.generateRefreshToken(userDetails);
-		
+
 		LoginResponse response = new LoginResponse();
 		response.setAccess(accessToken);
 		response.setRefresh(refreshToken);
 
 		return response;
 	}
-	
+
 	public LoginResponse registrar(RegisterRequest request) {
-		if(!request.getPassword1().equals(request.getPassword2())) {
+		if (!request.getPassword1().equals(request.getPassword2())) {
 			throw new PasswordException("La password ");
 		}
-		
-		this.usuarioService.create(request.getUsername(), request.getPassword());
+
+		this.usuarioService.create(request.getUsername(), request.getPassword1());
 		Authentication authentication = authenticationManager
-				.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+				.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword1()));
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-		
+
 		String accessToken = jwtUtil.generateAccessToken(userDetails);
 		String refreshToken = jwtUtil.generateRefreshToken(userDetails);
-		
+
 		LoginResponse response = new LoginResponse();
 		response.setAccess(accessToken);
 		response.setRefresh(refreshToken);
 
 		return response;
 	}
-	
+
 	public LoginResponse refresh(RefreshDTO dto) {
 		String accessToken = jwtUtil.generateAccessToken(dto.getRefresh());
 		String refreshToken = jwtUtil.generateRefreshToken(dto.getRefresh());

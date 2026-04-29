@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #0ea5e9;
+  --primary-dark: #0369a1;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 font-sans antialiased;
+}
+
+/* Glassmorphism utility */
+.glass {
+  @apply bg-white/70 backdrop-blur-md border border-white/20;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
+}
+

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.daw.persistence.entities.Estado;
 import com.daw.persistence.entities.Tarea;
 import com.daw.persistence.repositories.TareaRepository;
+import com.daw.persistence.repositories.UsuarioRepository;
 import com.daw.services.exceptions.TareaException;
 import com.daw.services.exceptions.TareaNotFoundException;
 import com.daw.services.exceptions.TareaSecurityException;
@@ -19,6 +20,9 @@ public class TareaService {
 
 	@Autowired
 	private TareaRepository tareaRepository;
+
+	@Autowired
+	private UsuarioRepository usuarioRepository;
 
 	// findAll
 	public List<Tarea> findAll() {
@@ -36,19 +40,28 @@ public class TareaService {
 
 	// create
 	public Tarea create(Tarea tarea) {
+		if (tarea.getFechaVencimiento() == null) {
+			throw new TareaException("La fecha de vencimiento es obligatoria. ");
+		}
 		if (tarea.getFechaVencimiento().isBefore(LocalDate.now())) {
-			throw new TareaException("La fecha de vencimiento debe ser posterior. ");
+			throw new TareaException("La fecha de vencimiento debe ser posterior o igual a hoy. ");
 		}
 		if (tarea.getEstado() != null) {
-			throw new TareaException("No se puede modificar el estado. ");
+			throw new TareaException("No se puede establecer el estado manualmente al crear. ");
 		}
 		if (tarea.getFechaCreacion() != null) {
-			throw new TareaException("No se puede modificar la fecha de creación. ");
+			throw new TareaException("No se puede establecer la fecha de creación manualmente. ");
 		}
+
+		// Asignar el usuario autenticado
+		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		int idUsuario = this.usuarioRepository.findByUsername(username)
+				.orElseThrow(() -> new TareaSecurityException("Usuario no encontrado")).getId();
 
 		tarea.setId(0);
 		tarea.setEstado(Estado.PENDIENTE);
 		tarea.setFechaCreacion(LocalDate.now());
+		tarea.setIdUsuario(idUsuario);
 
 		return this.tareaRepository.save(tarea);
 	}
@@ -89,7 +102,7 @@ public class TareaService {
 	}
 
 	public Tarea marcarEnProgreso(int idTarea) {
-		Tarea tarea = this.findById(idTarea);
+		Tarea tarea = this.findByIdAndUser(idTarea);
 
 		if (!tarea.getEstado().equals(Estado.PENDIENTE)) {
 			throw new TareaException("La tarea ya está completada o ya está en progreso");
@@ -98,50 +111,58 @@ public class TareaService {
 		tarea.setEstado(Estado.EN_PROGRESO);
 		return this.tareaRepository.save(tarea);
 	}
-	
-//	Obtener las tareas pendientes.
+
+	public Tarea marcarComoCompletada(int idTarea) {
+		Tarea tarea = this.findByIdAndUser(idTarea);
+
+		if (tarea.getEstado().equals(Estado.COMPLETADA)) {
+			throw new TareaException("La tarea ya está completada");
+		}
+
+		tarea.setEstado(Estado.COMPLETADA);
+		return this.tareaRepository.save(tarea);
+	}
+
+	// Obtener las tareas pendientes.
 	public List<Tarea> pendientes() {
 		return this.tareaRepository.findByEstado(Estado.PENDIENTE);
 	}
-	
-//	Obtener las tareas en progreso.
+
+	// Obtener las tareas en progreso.
 	public List<Tarea> enProgreso() {
 		return this.tareaRepository.findByEstado(Estado.EN_PROGRESO);
 	}
-//	Obtener las tareas completadas.
+
+	// Obtener las tareas completadas.
 	public List<Tarea> completadas() {
 		return this.tareaRepository.findByEstado(Estado.COMPLETADA);
 	}
 
-	//Métodos securizados
-	//Mis tareas
+	// Métodos securizados
+	// Mis tareas
 	public List<Tarea> findByUser() {
-		//Con este método obtengo el username que está autenticado en este momento
+		// Con este método obtengo el username que está autenticado en este momento
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
-		
+		boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+		if (isAdmin) {
+			return this.tareaRepository.findAll();
+		}
+
 		return this.tareaRepository.findByUsuarioUsername(username);
 	}
-	
+
 	public Tarea findByIdAndUser(int idTarea) {
 		Tarea t = this.findById(idTarea);
-		
-		if(!t.getUsuario().getUsername().equals(SecurityContextHolder.getContext().getAuthentication().getName())) {
+		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+		if (!isAdmin && !t.getUsuario().getUsername().equals(username)) {
 			throw new TareaSecurityException("La tarea no pertenece al usuario. ");
 		}
 
 		return t;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 }
